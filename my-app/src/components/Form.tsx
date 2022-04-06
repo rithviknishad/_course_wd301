@@ -14,6 +14,7 @@ export function Form(props: { closeFormCB: () => void }) {
   const [newField, setNewField] = useState("");
 
   const addField = () => {
+    if (newField.trim() === "") return;
     setFields([
       ...fields,
       { id: Number(new Date()), label: newField, type: "text", value: "" },
