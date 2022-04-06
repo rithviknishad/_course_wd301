@@ -48,6 +48,7 @@ export function Form(props: { closeFormCB: () => void }) {
       <div>
         {fields.map((field) => (
           <LabelledInput
+            key={field.id}
             id={field.id}
             label={field.label}
             fieldType={field.type}
