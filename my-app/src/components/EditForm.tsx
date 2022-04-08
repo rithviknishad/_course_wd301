@@ -1,82 +1,39 @@
 import React, { useState, useEffect, useRef } from "react";
 import LabelledInput from "./LabelledInput";
+import { formData } from "./FormsList";
 
-interface formData {
-  id: number;
-  title: string;
-  formFields: formField[];
-}
-
-interface formField {
-  id: number;
-  label: string;
-  type: string;
-  value: string;
-}
-
-const initialFormFields: formField[] = [
-  { id: 0, value: "", label: "First Name", type: "text" },
-  { id: 1, value: "", label: "Last Name", type: "text" },
-  { id: 2, value: "", label: "Email", type: "email" },
-  { id: 3, value: "", label: "Date of Birth", type: "date" },
-  { id: 4, value: "", label: "Phone Number", type: "tel" },
-];
-
-const getLocalForms: () => formData[] = () => {
-  const savedFormsFromStorage = localStorage.getItem("forms");
-  return savedFormsFromStorage ? JSON.parse(savedFormsFromStorage) : [];
-};
-
-const initialState: () => formData = () => {
-  const localForms = getLocalForms();
-
-  if (localForms.length > 0) return localForms[0];
-
-  const newForm = {
-    id: Number(new Date()),
-    title: "Untitled Form",
-    formFields: initialFormFields,
-  };
-  saveLocalForms([...localForms, newForm]);
-  return newForm;
-};
-
-const saveLocalForms = (localForms: formData[]) => {
-  localStorage.setItem("forms", JSON.stringify(localForms));
-};
-
-const saveForm = (currentState: formData) => {
-  saveLocalForms(
-    getLocalForms().map((form) => {
-      return form.id === currentState.id ? currentState : form;
-    })
-  );
-};
-
-export function Form(props: { closeFormCB: () => void }) {
-  const [state, setState] = useState(() => initialState());
+export function EditForm(props: {
+  form: formData;
+  saveFormCB: (currentState: formData) => void;
+  closeFormCB: () => void;
+}) {
+  const [state, setState] = useState(props.form);
   const [newField, setNewField] = useState("");
+
   const titleRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    console.log("component mounted...");
-    document.title = "Form Editor";
+    document.title = `${state.title} | Form Editor`;
     titleRef.current?.focus();
+
     return () => {
       document.title = "React App";
     };
-  }, []);
+  }, [state.title]);
+
   useEffect(() => {
     let timeout = setTimeout(() => {
-      saveForm(state);
-      console.log("State saved to...");
+      props.saveFormCB(state);
     }, 1000);
+
     return () => {
       clearTimeout(timeout);
     };
   }, [state, props]);
+
   const addField = () => {
     if (newField.trim() === "") return;
+
     setState({
       ...state,
       formFields: [
@@ -84,6 +41,7 @@ export function Form(props: { closeFormCB: () => void }) {
         { id: Number(new Date()), label: newField, type: "text", value: "" },
       ],
     });
+
     setNewField("");
   };
 
@@ -104,11 +62,9 @@ export function Form(props: { closeFormCB: () => void }) {
   };
 
   const clearForm = () => {
-    console.log("clearing...");
     setState({
       ...state,
       formFields: state.formFields.map((field) => {
-        console.log(field.label);
         return { ...field, value: "" };
       }),
     });
@@ -157,29 +113,24 @@ export function Form(props: { closeFormCB: () => void }) {
           Add field
         </button>
       </div>
-      <div className="flex gap-4">
-        <input
-          type="submit"
-          className="text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center m-2"
-          value="Submit"
-        />
+      <div className="flex gap-2">
         <button
           className="text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center m-2"
-          onClick={(_) => saveForm(state)}
+          onClick={(_) => props.saveFormCB(state)}
         >
-          Save Form
+          Save
         </button>
         <button
           className="text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center m-2"
           onClick={props.closeFormCB}
         >
-          Close Form
+          Close
         </button>
         <button
           className="text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center m-2"
           onClick={clearForm}
         >
-          Clear Form
+          Clear
         </button>
       </div>
     </div>
