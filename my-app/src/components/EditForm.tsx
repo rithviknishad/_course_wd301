@@ -1,16 +1,44 @@
 import React, { useState, useEffect, useRef } from "react";
-import LabelledInput from "./LabelledInput";
-import { formData } from "./FormsList";
+import EditableLabelField from "./EditableLabelField";
+import { Link, navigate } from "raviger";
+import { getLocalForms, saveLocalForms } from "../utils/storageUtils";
 
-export function EditForm(props: {
-  form: formData;
-  saveFormCB: (currentState: formData) => void;
-  closeFormCB: () => void;
-}) {
-  const [state, setState] = useState(props.form);
+export function EditForm(props: { formId: Number }) {
+  // TODO: show form does not exist box if no form with specified id.
+  const [state, setState] = useState(
+    () => getLocalForms().find((form) => form.id === props.formId)!
+  );
   const [newField, setNewField] = useState("");
 
   const titleRef = useRef<HTMLInputElement>(null);
+
+  const clearForm = () => {
+    setState({
+      ...state,
+      formFields: state.formFields.map((field) => ({ ...field, value: "" })),
+    });
+  };
+
+  const saveForm = () => {
+    saveLocalForms(
+      getLocalForms().map((form) => (form.id === props.formId ? state : form))
+    );
+  };
+
+  useEffect(() => {
+    state.id !== props.formId && navigate(`/forms/${state.id}`);
+  }, [state.id, props.formId]);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      saveLocalForms(
+        getLocalForms().map((form) => (form.id === props.formId ? state : form))
+      );
+    });
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [state, props]);
 
   useEffect(() => {
     document.title = `${state.title} | Form Editor`;
@@ -21,27 +49,15 @@ export function EditForm(props: {
     };
   }, [state.title]);
 
-  useEffect(() => {
-    let timeout = setTimeout(() => {
-      props.saveFormCB(state);
-    }, 1000);
-
-    return () => {
-      clearTimeout(timeout);
-    };
-  }, [state, props]);
-
   const addField = () => {
     if (newField.trim() === "") return;
-
     setState({
       ...state,
       formFields: [
         ...state.formFields,
-        { id: Number(new Date()), label: newField, type: "text", value: "" },
+        { id: Number(new Date()), label: newField, type: "text" },
       ],
     });
-
     setNewField("");
   };
 
@@ -52,21 +68,22 @@ export function EditForm(props: {
     });
   };
 
-  const updateFieldValue = (id: number, value: string) => {
+  const updateFieldLabel = (id: number, newLabel: string) => {
     setState({
       ...state,
-      formFields: state.formFields.map((field) => {
-        return field.id !== id ? field : { ...field, value: value };
-      }),
+      formFields: state.formFields.map((field) =>
+        field.id !== id ? field : { ...field, label: newLabel }
+      ),
     });
   };
 
-  const clearForm = () => {
+  const updateFieldType = (id: number, newType: string) => {
+    console.log("udating field type " + newType);
     setState({
       ...state,
-      formFields: state.formFields.map((field) => {
-        return { ...field, value: "" };
-      }),
+      formFields: state.formFields.map((field) =>
+        field.id !== id ? field : { ...field, type: newType }
+      ),
     });
   };
 
@@ -86,14 +103,14 @@ export function EditForm(props: {
       />
       <div>
         {state.formFields.map((field) => (
-          <LabelledInput
+          <EditableLabelField
             key={field.id}
             id={field.id}
             label={field.label}
             fieldType={field.type}
-            updateFieldCB={updateFieldValue}
+            updateFieldLabelCB={updateFieldLabel}
+            updateFieldTypeCB={updateFieldType}
             removeFieldCB={removeField}
-            value={field.value}
           />
         ))}
       </div>
@@ -116,16 +133,16 @@ export function EditForm(props: {
       <div className="flex gap-2">
         <button
           className="text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center m-2"
-          onClick={(_) => props.saveFormCB(state)}
+          onClick={(_) => saveForm()}
         >
           Save
         </button>
-        <button
+        <Link
           className="text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center m-2"
-          onClick={props.closeFormCB}
+          href="/forms"
         >
           Close
-        </button>
+        </Link>
         <button
           className="text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center m-2"
           onClick={clearForm}
