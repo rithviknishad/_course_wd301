@@ -1,23 +1,89 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useReducer } from "react";
 import EditField from "./EditField";
 import { Link, navigate } from "raviger";
 import { getLocalForms, saveLocalForms } from "../utils/storageUtils";
 import { fieldTypes, formField, textFieldTypes } from "../types/fieldTypes";
+import { formData } from "../types/formTypes";
+
+const getNewField = (label: string): formField => {
+  return {
+    id: Number(new Date()),
+    label: label,
+    kind: fieldTypes.text,
+    fieldType: textFieldTypes.text,
+    value: "",
+  };
+};
+
+type AddFieldAction = {
+  type: "add_field";
+  label: string;
+  callback: () => void;
+};
+
+type RemoveFieldAction = {
+  type: "remove_field";
+  id: number;
+};
+
+type UpdateTitleAction = {
+  type: "update_title";
+  title: string;
+};
+
+type UpdateFormFieldAction = {
+  type: "update_field";
+  field: formField;
+};
+
+type FormAction =
+  | AddFieldAction
+  | RemoveFieldAction
+  | UpdateTitleAction
+  | UpdateFormFieldAction;
+
+const reducer = (state: formData, action: FormAction) => {
+  switch (action.type) {
+    case "add_field":
+      if (action.label.trim() === "") return state;
+      const newField = getNewField(action.label);
+      action.callback();
+      return {
+        ...state,
+        formFields: [...state.formFields, newField],
+      };
+
+    case "remove_field":
+      return {
+        ...state,
+        formFields: state.formFields.filter((field) => action.id !== field.id),
+      };
+
+    case "update_title":
+      return {
+        ...state,
+        title: action.title,
+      };
+
+    case "update_field":
+      return {
+        ...state,
+        formFields: state.formFields.map((field) =>
+          field.id === action.field.id ? action.field : field
+        ),
+      };
+  }
+};
 
 export function EditForm(props: { formId: Number }) {
-  const [state, setState] = useState(
+  const [state, dispatch] = useReducer(
+    reducer,
+    null,
     () => getLocalForms().find((form) => form.id === props.formId)!
   );
   const [newFieldLabel, setNewFieldLabel] = useState("");
 
   const titleRef = useRef<HTMLInputElement>(null);
-
-  const clearForm = () => {
-    setState({
-      ...state,
-      formFields: state.formFields.map((field) => ({ ...field, value: "" })),
-    });
-  };
 
   const saveForm = () => {
     saveLocalForms(
@@ -49,37 +115,10 @@ export function EditForm(props: { formId: Number }) {
     };
   }, [state.title]);
 
-  const addField = () => {
-    if (newFieldLabel.trim() === "") return;
-    setState({
-      ...state,
-      formFields: [
-        ...state.formFields,
-        {
-          id: Number(new Date()),
-          label: newFieldLabel,
-          kind: fieldTypes.text,
-          fieldType: textFieldTypes.text,
-          value: "",
-        },
-      ],
-    });
-    setNewFieldLabel("");
-  };
-
-  const removeField = (id: number) => {
-    setState({
-      ...state,
-      formFields: state.formFields.filter((field) => id !== field.id),
-    });
-  };
-
-  const updateField = (newField: formField) => {
-    setState({
-      ...state,
-      formFields: state.formFields.map((field) =>
-        field.id !== newField.id ? field : newField
-      ),
+  const updateField = (field: formField) => {
+    dispatch({
+      type: "update_field",
+      field: field,
     });
   };
 
@@ -91,8 +130,8 @@ export function EditForm(props: { formId: Number }) {
         value={state.title}
         className="border-2 border-blue-100 rounded-lg p-2 mb-4 mt-2 w-full"
         onChange={(e) => {
-          setState({
-            ...state,
+          dispatch({
+            type: "update_title",
             title: e.target.value,
           });
         }}
@@ -104,7 +143,12 @@ export function EditForm(props: { formId: Number }) {
               key={field.id}
               field={field}
               updateFieldCB={updateField}
-              removeFieldCB={removeField}
+              removeFieldCB={(id: number) => {
+                dispatch({
+                  type: "remove_field",
+                  id: id,
+                });
+              }}
             />
           );
         })}
@@ -120,7 +164,15 @@ export function EditForm(props: { formId: Number }) {
         />
         <button
           className="text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center m-2"
-          onClick={addField}
+          onClick={(_) => {
+            dispatch({
+              type: "add_field",
+              label: newFieldLabel,
+              callback: () => {
+                setNewFieldLabel("");
+              },
+            });
+          }}
         >
           Add field
         </button>
@@ -138,12 +190,6 @@ export function EditForm(props: { formId: Number }) {
         >
           Close
         </Link>
-        <button
-          className="text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center m-2"
-          onClick={clearForm}
-        >
-          Clear
-        </button>
       </div>
     </div>
   );

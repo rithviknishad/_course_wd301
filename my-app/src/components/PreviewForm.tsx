@@ -1,14 +1,64 @@
 import { navigate } from "raviger";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useReducer } from "react";
 import { formField } from "../types/fieldTypes";
+import { formData } from "../types/formTypes";
 import { getLocalForms, saveLocalForms } from "../utils/storageUtils";
 import InputField from "./InputField";
 
+type StartQuestion = {
+  type: "start";
+};
+
+type NextQuestion = {
+  type: "next";
+  max_questions: number;
+};
+
+type PreviousQuestion = {
+  type: "previous";
+};
+
+type QuestionActions = StartQuestion | NextQuestion | PreviousQuestion;
+
+const questionReducer = (state: number, action: QuestionActions) => {
+  switch (action.type) {
+    case "start":
+      return 0;
+
+    case "next":
+      return action.max_questions === state + 1 ? state : state + 1;
+
+    case "previous":
+      return state > 0 ? state - 1 : state;
+  }
+};
+
+type UpdateFieldAnswer = {
+  type: "update_field_answer";
+  question: number;
+  field: formField;
+};
+
+type PreviewFormActions = UpdateFieldAnswer;
+
+const formReducer = (state: formData, action: PreviewFormActions) => {
+  switch (action.type) {
+    case "update_field_answer":
+      return {
+        ...state,
+        formFields: state.formFields.map((field, question) =>
+          question === action.question ? action.field : field
+        ),
+      };
+  }
+};
+
 export default function PreviewForm(props: { formId: Number }) {
-  const [form, setForm] = useState(
+  const [form, dispatchForm] = useReducer(
+    formReducer,
     getLocalForms().find((form) => form.id === props.formId)!
   );
-  const [currentQuestionNumber, setCurrentQuestionNumber] = useState(-1);
+  const [currentQuestion, dispatchQuestion] = useReducer(questionReducer, -1);
 
   useEffect(() => {
     form.id !== props.formId && navigate(`/preview/${form.id}`);
@@ -18,9 +68,9 @@ export default function PreviewForm(props: { formId: Number }) {
     saveLocalForms(getLocalForms().map((f) => (f.id === form.id ? form : f)));
   }, [form]);
 
-  const quizStarted = currentQuestionNumber >= 0;
-  const isLastQuestion = currentQuestionNumber === form.formFields.length - 1;
-  const isFirstQuestion = currentQuestionNumber === 0;
+  const quizStarted = currentQuestion >= 0;
+  const isLastQuestion = currentQuestion === form.formFields.length - 1;
+  const isFirstQuestion = currentQuestion === 0;
 
   if (!quizStarted) {
     return (
@@ -33,7 +83,7 @@ export default function PreviewForm(props: { formId: Number }) {
             <button
               className="text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center m-2"
               onClick={() => {
-                setCurrentQuestionNumber(0);
+                dispatchQuestion({ type: "start" });
               }}
             >
               Start
@@ -48,13 +98,12 @@ export default function PreviewForm(props: { formId: Number }) {
     <div className="flex flex-col gap-4 p-4 divide-y divide-dotted">
       <div>
         <InputField
-          field={form.formFields[currentQuestionNumber]}
-          updateFieldCB={(newField: formField) => {
-            setForm({
-              ...form,
-              formFields: form.formFields.map((f, i) =>
-                i === currentQuestionNumber ? newField : f
-              ),
+          field={form.formFields[currentQuestion]}
+          updateFieldCB={(field: formField) => {
+            dispatchForm({
+              type: "update_field_answer",
+              question: currentQuestion,
+              field: field,
             });
           }}
         />
@@ -64,7 +113,7 @@ export default function PreviewForm(props: { formId: Number }) {
           <button
             className="text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center m-2"
             onClick={() => {
-              setCurrentQuestionNumber(currentQuestionNumber - 1);
+              dispatchQuestion({ type: "previous" });
             }}
           >
             Back
@@ -75,7 +124,10 @@ export default function PreviewForm(props: { formId: Number }) {
           onClick={(_) => {
             isLastQuestion
               ? navigate("/forms")
-              : setCurrentQuestionNumber(currentQuestionNumber + 1);
+              : dispatchQuestion({
+                  type: "next",
+                  max_questions: form.formFields.length,
+                });
           }}
         >
           {isLastQuestion ? "Submit" : "Next"}
