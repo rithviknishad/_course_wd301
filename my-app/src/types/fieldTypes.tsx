@@ -2,6 +2,7 @@ export enum fieldTypes {
   text = "text",
   dropdown = "dropdown",
   radio = "radio",
+  textarea = "textarea",
   multiSelect = "multiSelect",
 }
 
@@ -34,6 +35,13 @@ export type RadioField = {
   value: string;
 };
 
+export type TextArea = {
+  kind: fieldTypes.textarea;
+  id: number;
+  label: string;
+  value: string;
+};
+
 export type MultiSelectDropdownField = {
   kind: fieldTypes.multiSelect;
   id: number;
@@ -46,4 +54,5 @@ export type formField =
   | TextField
   | DropdownField
   | RadioField
+  | TextArea
   | MultiSelectDropdownField;

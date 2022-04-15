@@ -45,6 +45,14 @@ const changeFormFieldType = (
         value: "",
       };
 
+    case fieldTypes.textarea:
+      return {
+        kind: fieldTypes.textarea,
+        id: oldField.id,
+        label: oldField.label,
+        value: "",
+      };
+
     case fieldTypes.multiSelect:
       return {
         kind: fieldTypes.multiSelect,

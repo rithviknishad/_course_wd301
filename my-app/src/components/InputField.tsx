@@ -87,6 +87,20 @@ export default function InputField(props: {
       );
       break;
 
+    case fieldTypes.textarea:
+      inputField = (
+        <textarea
+          className="border-2 border-blue-100 rounded-lg p-2 mb-4 mt-2 w-full"
+          cols={50}
+          rows={4}
+          value={field.value}
+          onChange={(e) => {
+            props.updateFieldCB({ ...field, value: e.target.value });
+          }}
+        />
+      );
+      break;
+
     default:
       inputField = (
         <p className="text-red-600">Render unimplemented for this field type</p>
