@@ -4,14 +4,16 @@ import About from "../components/About";
 import { EditForm } from "../components/EditForm";
 import { FormsList } from "../components/FormsList";
 import Home from "../components/Home";
-import Preview from "../components/Preview";
+import PreviewForm from "../components/PreviewForm";
 
 const routes = {
   "/": () => <Home />,
   "/about": () => <About />,
   "/forms": () => <FormsList />,
   "/forms/:id": ({ id }: { id: string }) => <EditForm formId={Number(id)} />,
-  "/preview/:id": ({ id }: { id: string }) => <Preview formId={Number(id)} />,
+  "/preview/:id": ({ id }: { id: string }) => (
+    <PreviewForm formId={Number(id)} />
+  ),
 };
 
 export default function AppRouter() {

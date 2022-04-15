@@ -1,58 +1,62 @@
 import { navigate } from "raviger";
 import React, { useEffect, useState } from "react";
-import { preview } from "../types/formTypes";
-import {
-  getLocalForms,
-  getLocalPreviews,
-  saveLocalPreviews,
-} from "../utils/storageUtils";
-import LabelledInput from "./LabelledInput";
+import { formField } from "../types/fieldTypes";
+import { getLocalForms, saveLocalForms } from "../utils/storageUtils";
+import InputField from "./InputField";
 
-export default function Preview(props: { formId: Number }) {
-  const [form] = useState(
+export default function PreviewForm(props: { formId: Number }) {
+  const [form, setForm] = useState(
     getLocalForms().find((form) => form.id === props.formId)!
   );
+  const [currentQuestionNumber, setCurrentQuestionNumber] = useState(-1);
+
   useEffect(() => {
     form.id !== props.formId && navigate(`/preview/${form.id}`);
   });
 
-  const [currentQuestionNumber, setCurrentQuestionNumber] = useState(0);
-
-  const [preview, setPreview] = useState<preview>(() => {
-    let p = getLocalPreviews().find((preview) => preview.id === form.id);
-    if (!p) {
-      p = {
-        id: form.id,
-        answers: form.formFields.map((field) => ""),
-      };
-      saveLocalPreviews([...getLocalPreviews(), p]);
-    }
-    return p;
-  });
-
   useEffect(() => {
-    saveLocalPreviews(
-      getLocalPreviews().map((p) => (p.id === form.id ? preview : p))
-    );
-  }, [preview, form.id]);
+    saveLocalForms(getLocalForms().map((f) => (f.id === form.id ? form : f)));
+  }, [form]);
 
+  const quizStarted = currentQuestionNumber >= 0;
   const isLastQuestion = currentQuestionNumber === form.formFields.length - 1;
   const isFirstQuestion = currentQuestionNumber === 0;
+
+  if (!quizStarted) {
+    return (
+      <div className="flex flex-col gap-4 p-4 divide-y divide-dotted">
+        <p>Take the quiz</p>
+        <p className="font-bold text-2xl">{form.title}</p>
+        <p>There are {form.formFields.length} questions ahead...</p>
+        {form.formFields.length > 0 && (
+          <div className="flex gap-2">
+            <button
+              className="text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center m-2"
+              onClick={() => {
+                setCurrentQuestionNumber(0);
+              }}
+            >
+              Start
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4 p-4 divide-y divide-dotted">
       <div>
-        <LabelledInput
+        <InputField
           field={form.formFields[currentQuestionNumber]}
-          updateFieldCB={(_: number, newAns: string) => {
-            setPreview({
-              ...preview,
-              answers: preview.answers.map((oldAns, index) =>
-                index === currentQuestionNumber ? newAns : oldAns
+          updateFieldCB={(newField: formField) => {
+            setForm({
+              ...form,
+              formFields: form.formFields.map((f, i) =>
+                i === currentQuestionNumber ? newField : f
               ),
             });
           }}
-          value={preview.answers[currentQuestionNumber]}
         />
       </div>
       <div className="flex gap-2">

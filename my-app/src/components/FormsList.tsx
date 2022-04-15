@@ -1,14 +1,38 @@
 import { Link, useQueryParams } from "raviger";
 import React, { useEffect, useState } from "react";
-import { formData, formField } from "../types/formTypes";
+import { fieldTypes, formField, textFieldTypes } from "../types/fieldTypes";
+import { formData } from "../types/formTypes";
 import { getLocalForms, saveLocalForms } from "../utils/storageUtils";
 
 const initialFormFields: formField[] = [
-  { id: 0, label: "First Name", type: "text" },
-  { id: 1, label: "Last Name", type: "text" },
-  { id: 2, label: "Email", type: "email" },
-  { id: 3, label: "Date of Birth", type: "date" },
-  { id: 4, label: "Phone Number", type: "tel" },
+  {
+    kind: fieldTypes.text,
+    id: 0,
+    label: "First Name",
+    fieldType: textFieldTypes.text,
+    value: "",
+  },
+  {
+    kind: fieldTypes.text,
+    id: 1,
+    label: "Last Name",
+    fieldType: textFieldTypes.text,
+    value: "",
+  },
+  {
+    kind: fieldTypes.text,
+    id: 2,
+    label: "Email",
+    fieldType: textFieldTypes.email,
+    value: "",
+  },
+  {
+    kind: fieldTypes.text,
+    id: 3,
+    label: "Date of Birth",
+    fieldType: textFieldTypes.date,
+    value: "",
+  },
 ];
 
 export function FormsList() {

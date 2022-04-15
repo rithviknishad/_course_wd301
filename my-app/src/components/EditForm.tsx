@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
-import EditableLabelField from "./EditableLabelField";
+import EditField from "./EditField";
 import { Link, navigate } from "raviger";
 import { getLocalForms, saveLocalForms } from "../utils/storageUtils";
+import { fieldTypes, formField, textFieldTypes } from "../types/fieldTypes";
 
 export function EditForm(props: { formId: Number }) {
-  // TODO: show form does not exist box if no form with specified id.
   const [state, setState] = useState(
     () => getLocalForms().find((form) => form.id === props.formId)!
   );
-  const [newField, setNewField] = useState("");
+  const [newFieldLabel, setNewFieldLabel] = useState("");
 
   const titleRef = useRef<HTMLInputElement>(null);
 
@@ -50,15 +50,21 @@ export function EditForm(props: { formId: Number }) {
   }, [state.title]);
 
   const addField = () => {
-    if (newField.trim() === "") return;
+    if (newFieldLabel.trim() === "") return;
     setState({
       ...state,
       formFields: [
         ...state.formFields,
-        { id: Number(new Date()), label: newField, type: "text" },
+        {
+          id: Number(new Date()),
+          label: newFieldLabel,
+          kind: fieldTypes.text,
+          fieldType: textFieldTypes.text,
+          value: "",
+        },
       ],
     });
-    setNewField("");
+    setNewFieldLabel("");
   };
 
   const removeField = (id: number) => {
@@ -68,21 +74,11 @@ export function EditForm(props: { formId: Number }) {
     });
   };
 
-  const updateFieldLabel = (id: number, newLabel: string) => {
+  const updateField = (newField: formField) => {
     setState({
       ...state,
       formFields: state.formFields.map((field) =>
-        field.id !== id ? field : { ...field, label: newLabel }
-      ),
-    });
-  };
-
-  const updateFieldType = (id: number, newType: string) => {
-    console.log("udating field type " + newType);
-    setState({
-      ...state,
-      formFields: state.formFields.map((field) =>
-        field.id !== id ? field : { ...field, type: newType }
+        field.id !== newField.id ? field : newField
       ),
     });
   };
@@ -101,26 +97,25 @@ export function EditForm(props: { formId: Number }) {
           });
         }}
       />
-      <div>
-        {state.formFields.map((field) => (
-          <EditableLabelField
-            key={field.id}
-            id={field.id}
-            label={field.label}
-            fieldType={field.type}
-            updateFieldLabelCB={updateFieldLabel}
-            updateFieldTypeCB={updateFieldType}
-            removeFieldCB={removeField}
-          />
-        ))}
+      <div className="flex flex-col gap-6">
+        {state.formFields.map((field) => {
+          return (
+            <EditField
+              key={field.id}
+              field={field}
+              updateFieldCB={updateField}
+              removeFieldCB={removeField}
+            />
+          );
+        })}
       </div>
       <div className="flex gap-2">
         <input
           type="text"
-          value={newField}
+          value={newFieldLabel}
           className="border-2 border-blue-100 rounded-lg p-2 mb-4 mt-2 w-full"
           onChange={(e) => {
-            setNewField(e.target.value);
+            setNewFieldLabel(e.target.value);
           }}
         />
         <button
