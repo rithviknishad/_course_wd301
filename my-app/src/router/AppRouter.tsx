@@ -1,6 +1,7 @@
 import { useRoutes } from "raviger";
 import React, { Suspense } from "react";
 import AppContainer from "../AppContainer";
+import Authenticated from "../components/Authenticated";
 import { User } from "../types/userTypes";
 
 const Home = React.lazy(() => import("../components/Home"));
@@ -30,12 +31,16 @@ const routes = {
   ),
   "/forms": () => (
     <Suspense fallback={loadingFallback}>
-      <FormsList />
+      <Authenticated>
+        <FormsList />
+      </Authenticated>
     </Suspense>
   ),
   "/forms/:id": ({ id }: { id: string }) => (
     <Suspense fallback={loadingFallback}>
-      <EditForm formId={Number(id)} />
+      <Authenticated>
+        <EditForm formId={Number(id)} />
+      </Authenticated>
     </Suspense>
   ),
   "/preview/:id": ({ id }: { id: string }) => (
