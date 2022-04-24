@@ -1,22 +1,53 @@
 import { useRoutes } from "raviger";
+import React, { Suspense } from "react";
 import AppContainer from "../AppContainer";
-import About from "../components/About";
-import { EditForm } from "../components/EditForm";
-import { FormsList } from "../components/FormsList";
-import Home from "../components/Home";
-import PreviewForm from "../components/PreviewForm";
+import { User } from "../types/userTypes";
+
+const Home = React.lazy(() => import("../components/Home"));
+const About = React.lazy(() => import("../components/About"));
+const Login = React.lazy(() => import("../components/Login"));
+const PreviewForm = React.lazy(() => import("../components/PreviewForm"));
+const FormsList = React.lazy(() => import("../components/FormsList"));
+const EditForm = React.lazy(() => import("../components/EditForm"));
+
+const loadingFallback = <div>Loading...</div>;
 
 const routes = {
-  "/": () => <Home />,
-  "/about": () => <About />,
-  "/forms": () => <FormsList />,
-  "/forms/:id": ({ id }: { id: string }) => <EditForm formId={Number(id)} />,
+  "/": () => (
+    <Suspense fallback={loadingFallback}>
+      <Home />
+    </Suspense>
+  ),
+  "/login": () => (
+    <Suspense fallback={loadingFallback}>
+      <Login />
+    </Suspense>
+  ),
+  "/about": () => (
+    <Suspense fallback={loadingFallback}>
+      <About />
+    </Suspense>
+  ),
+  "/forms": () => (
+    <Suspense fallback={loadingFallback}>
+      <FormsList />
+    </Suspense>
+  ),
+  "/forms/:id": ({ id }: { id: string }) => (
+    <Suspense fallback={loadingFallback}>
+      <EditForm formId={Number(id)} />
+    </Suspense>
+  ),
   "/preview/:id": ({ id }: { id: string }) => (
-    <PreviewForm formId={Number(id)} />
+    <Suspense fallback={loadingFallback}>
+      <PreviewForm formId={Number(id)} />
+    </Suspense>
   ),
 };
 
-export default function AppRouter() {
+export default function AppRouter(props: { currentUser: User }) {
   let routeResult = useRoutes(routes);
-  return <AppContainer>{routeResult}</AppContainer>;
+  return (
+    <AppContainer currentUser={props.currentUser}>{routeResult}</AppContainer>
+  );
 }
