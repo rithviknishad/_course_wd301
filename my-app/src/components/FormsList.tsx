@@ -67,7 +67,7 @@ export default function FormsList() {
             form.title.toLowerCase().includes(searchString.toLowerCase())
           )
           .map((form, index) => (
-            <li key={index}>
+            <li key={index} tabIndex={0}>
               <FormTile form={form} removeFormCB={() => removeForm(form)} />
             </li>
           ))}
