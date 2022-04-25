@@ -1,6 +1,7 @@
 import { navigate } from "raviger";
 import React from "react";
 import { useState } from "react";
+import { toast } from "react-toastify";
 import { Errors } from "../types/commons";
 import { Form, validateForm } from "../types/formTypes";
 import { createForm } from "../utils/apiUtils";
@@ -27,6 +28,7 @@ export default function CreateForm() {
     if (Object.keys(validationErrors).length !== 0) return;
 
     try {
+      toast("Form has been created");
       const data = await createForm(form);
       navigate(`/forms/${data.id}/`);
     } catch (error) {

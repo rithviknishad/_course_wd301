@@ -1,5 +1,6 @@
 import { navigate } from "raviger";
 import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import { login } from "../utils/apiUtils";
 import { getAuthToken, setAuthToken } from "../utils/storageUtils";
 
@@ -12,6 +13,7 @@ export default function Login() {
     try {
       const data = await login({ username, password });
       setAuthToken(data.token);
+      toast("Successfully logged in");
       navigate("/");
     } catch (error) {
       console.log(error);

@@ -1,5 +1,6 @@
 import { navigate } from "raviger";
 import React, { useEffect, useReducer, useState } from "react";
+import { toast } from "react-toastify";
 import { FormField } from "../types/fieldTypes";
 import { Form, Submission } from "../types/formTypes";
 import { createSubmission, getForm, listFormFields } from "../utils/apiUtils";
@@ -75,10 +76,11 @@ export default function PreviewForm(props: { formId: number }) {
   const submitForm = async () => {
     if (!submission) return;
     try {
+      toast("Submitting form...");
       await createSubmission(props.formId, submission);
-      navigate("/");
+      toast("Submitted!");
     } catch (error) {
-      console.log(error);
+      toast(String(error));
     }
   };
 
