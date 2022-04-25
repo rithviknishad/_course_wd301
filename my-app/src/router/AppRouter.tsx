@@ -50,9 +50,7 @@ const routes = {
   ),
 };
 
-export default function AppRouter(props: { currentUser: User }) {
+export default function AppRouter() {
   let routeResult = useRoutes(routes);
-  return (
-    <AppContainer currentUser={props.currentUser}>{routeResult}</AppContainer>
-  );
+  return <AppContainer>{routeResult}</AppContainer>;
 }

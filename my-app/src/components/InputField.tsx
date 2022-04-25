@@ -1,18 +1,18 @@
 import React, { ReactNode } from "react";
-import { fieldTypes, formField } from "../types/fieldTypes";
+import { FormField } from "../types/fieldTypes";
 
 export default function InputField(props: {
-  field: formField;
-  updateFieldCB: (field: formField) => void;
+  field: FormField;
+  updateFieldCB: (field: FormField) => void;
 }) {
   let inputField: ReactNode;
 
   const field = props.field;
   switch (field.kind) {
-    case fieldTypes.text:
+    case "TEXT":
       inputField = (
         <input
-          type={`${field.fieldType}`}
+          // type={`${field.fieldType}`}
           name={`${field.id}`}
           className="border-2 border-blue-100 rounded-lg p-2 mb-4 mt-2 w-full"
           value={field.value}
@@ -23,7 +23,7 @@ export default function InputField(props: {
       );
       break;
 
-    case fieldTypes.radio:
+    case "RADIO":
       inputField = (
         <div>
           {field.options.map((option, index) => {
@@ -48,7 +48,7 @@ export default function InputField(props: {
       );
       break;
 
-    case fieldTypes.dropdown:
+    case "DROPDOWN":
       inputField = (
         <select
           value={field.value}
@@ -64,40 +64,6 @@ export default function InputField(props: {
             );
           })}
         </select>
-      );
-      break;
-
-    case fieldTypes.multiSelect:
-      inputField = (
-        <select
-          multiple={true}
-          value={field.values}
-          onChange={(e) => {
-            props.updateFieldCB({ ...field, values: [e.target.value] });
-          }}
-        >
-          {field.options.map((option, index) => {
-            return (
-              <option key={index} value={option}>
-                {option}
-              </option>
-            );
-          })}
-        </select>
-      );
-      break;
-
-    case fieldTypes.textarea:
-      inputField = (
-        <textarea
-          className="border-2 border-blue-100 rounded-lg p-2 mb-4 mt-2 w-full"
-          cols={50}
-          rows={4}
-          value={field.value}
-          onChange={(e) => {
-            props.updateFieldCB({ ...field, value: e.target.value });
-          }}
-        />
       );
       break;
 

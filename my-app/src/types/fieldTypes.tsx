@@ -1,58 +1,24 @@
-export enum fieldTypes {
-  text = "text",
-  dropdown = "dropdown",
-  radio = "radio",
-  textarea = "textarea",
-  multiSelect = "multiSelect",
-}
-
-export enum textFieldTypes {
-  text = "text",
-  email = "email",
-  date = "date",
-}
 export type TextField = {
-  kind: fieldTypes.text;
-  id: number;
+  id?: number;
   label: string;
-  fieldType: textFieldTypes;
+  kind: "TEXT";
   value: string;
 };
 
 export type DropdownField = {
-  kind: fieldTypes.dropdown;
-  id: number;
+  id?: number;
   label: string;
+  kind: "DROPDOWN";
   options: string[];
   value: string;
 };
 
 export type RadioField = {
-  kind: fieldTypes.radio;
-  id: number;
+  id?: number;
   label: string;
+  kind: "RADIO";
   options: string[];
   value: string;
 };
 
-export type TextArea = {
-  kind: fieldTypes.textarea;
-  id: number;
-  label: string;
-  value: string;
-};
-
-export type MultiSelectDropdownField = {
-  kind: fieldTypes.multiSelect;
-  id: number;
-  label: string;
-  options: string[];
-  values: string[];
-};
-
-export type formField =
-  | TextField
-  | DropdownField
-  | RadioField
-  | TextArea
-  | MultiSelectDropdownField;
+export type FormField = TextField | DropdownField | RadioField;

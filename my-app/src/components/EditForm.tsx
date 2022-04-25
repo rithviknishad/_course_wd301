@@ -1,125 +1,58 @@
-import React, { useState, useEffect, useRef, useReducer } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import EditField from "./EditField";
-import { Link, navigate } from "raviger";
-import { getLocalForms, saveLocalForms } from "../utils/storageUtils";
-import { fieldTypes, formField, textFieldTypes } from "../types/fieldTypes";
-import { formData } from "../types/formTypes";
+import { Link } from "raviger";
+import { FormField } from "../types/fieldTypes";
+import { Form } from "../types/formTypes";
+import {
+  createFormField,
+  deleteFormField,
+  getForm,
+  listFormFields,
+  updateForm,
+  updateFormField,
+} from "../utils/apiUtils";
+import { updateLocalForm, updateLocalFormFields } from "../utils/storageUtils";
 
-const getNewField = (label: string): formField => {
+const getNewField = (label: string): FormField => {
   return {
     id: Number(new Date()),
     label: label,
-    kind: fieldTypes.text,
-    fieldType: textFieldTypes.text,
+    kind: "TEXT",
     value: "",
   };
 };
 
-type AddFieldAction = {
-  type: "add_field";
-  label: string;
-  callback: () => void;
-};
+export default function EditForm(props: { formId: number }) {
+  const [form, setForm] = useState<Form | undefined>();
+  const [fields, setFields] = useState<FormField[] | undefined>();
 
-type RemoveFieldAction = {
-  type: "remove_field";
-  id: number;
-};
+  useEffect(() => {
+    getForm(props.formId).then(setForm);
+    listFormFields(props.formId).then(setFields);
+  }, [props.formId]);
 
-type UpdateTitleAction = {
-  type: "update_title";
-  title: string;
-};
+  useEffect(() => {
+    if (form) updateLocalForm(form);
+  }, [form]);
 
-type UpdateFormFieldAction = {
-  type: "update_field";
-  field: formField;
-};
+  useEffect(() => {
+    if (fields) updateLocalFormFields(props.formId, fields);
+  }, [fields, props.formId]);
 
-type FormAction =
-  | AddFieldAction
-  | RemoveFieldAction
-  | UpdateTitleAction
-  | UpdateFormFieldAction;
-
-const reducer = (state: formData, action: FormAction) => {
-  switch (action.type) {
-    case "add_field":
-      if (action.label.trim() === "") return state;
-      const newField = getNewField(action.label);
-      action.callback();
-      return {
-        ...state,
-        formFields: [...state.formFields, newField],
-      };
-
-    case "remove_field":
-      return {
-        ...state,
-        formFields: state.formFields.filter((field) => action.id !== field.id),
-      };
-
-    case "update_title":
-      return {
-        ...state,
-        title: action.title,
-      };
-
-    case "update_field":
-      return {
-        ...state,
-        formFields: state.formFields.map((field) =>
-          field.id === action.field.id ? action.field : field
-        ),
-      };
-  }
-};
-
-export function EditForm(props: { formId: Number }) {
-  const [state, dispatch] = useReducer(
-    reducer,
-    null,
-    () => getLocalForms().find((form) => form.id === props.formId)!
-  );
   const [newFieldLabel, setNewFieldLabel] = useState("");
 
   const titleRef = useRef<HTMLInputElement>(null);
 
-  const saveForm = () => {
-    saveLocalForms(
-      getLocalForms().map((form) => (form.id === props.formId ? state : form))
-    );
-  };
-
   useEffect(() => {
-    state.id !== props.formId && navigate(`/forms/${state.id}`);
-  }, [state.id, props.formId]);
-
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      saveLocalForms(
-        getLocalForms().map((form) => (form.id === props.formId ? state : form))
-      );
-    });
-    return () => {
-      clearTimeout(timeoutId);
-    };
-  }, [state, props]);
-
-  useEffect(() => {
-    document.title = `${state.title} | Form Editor`;
+    document.title = `${form?.title ?? "Loading..."} | Form Editor`;
     titleRef.current?.focus();
-
     return () => {
       document.title = "React App";
     };
-  }, [state.title]);
+  }, [form?.title]);
 
-  const updateField = (field: formField) => {
-    dispatch({
-      type: "update_field",
-      field: field,
-    });
+  const updateField = (field: FormField) => {
+    if (fields) setFields(fields.map((f) => (f.id === field.id ? field : f)));
   };
 
   return (
@@ -127,31 +60,28 @@ export function EditForm(props: { formId: Number }) {
       <input
         type="text"
         ref={titleRef}
-        value={state.title}
+        value={form?.title ?? "Loading..."}
         className="border-2 border-blue-100 rounded-lg p-2 mb-4 mt-2 w-full"
         onChange={(e) => {
-          dispatch({
-            type: "update_title",
-            title: e.target.value,
-          });
+          e.preventDefault();
+          if (form) setForm({ ...form, title: e.target.value });
         }}
       />
       <div className="flex flex-col gap-6">
-        {state.formFields.map((field) => {
+        {fields?.map((field) => {
           return (
             <EditField
               key={field.id}
               field={field}
               updateFieldCB={updateField}
               removeFieldCB={(id: number) => {
-                dispatch({
-                  type: "remove_field",
-                  id: id,
-                });
+                deleteFormField(props.formId, id).then((_) =>
+                  setFields(fields.filter((f) => f.id !== id))
+                );
               }}
             />
           );
-        })}
+        }) ?? <div>Fetching fields...</div>}
       </div>
       <div className="flex gap-2">
         <input
@@ -165,13 +95,10 @@ export function EditForm(props: { formId: Number }) {
         <button
           className="text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center m-2"
           onClick={(_) => {
-            dispatch({
-              type: "add_field",
-              label: newFieldLabel,
-              callback: () => {
-                setNewFieldLabel("");
-              },
-            });
+            createFormField(props.formId, getNewField(newFieldLabel)).then(
+              (field) => setFields([...fields!, field])
+            );
+            setNewFieldLabel("");
           }}
         >
           Add field
@@ -180,7 +107,13 @@ export function EditForm(props: { formId: Number }) {
       <div className="flex gap-2">
         <button
           className="text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center m-2"
-          onClick={(_) => saveForm()}
+          onClick={(_) => {
+            if (form) updateForm(props.formId, form);
+            if (fields)
+              fields.forEach((field) =>
+                updateFormField(props.formId, field.id!, field)
+              );
+          }}
         >
           Save
         </button>

@@ -1,72 +1,51 @@
 import React, { useState } from "react";
-import { fieldTypes, formField, textFieldTypes } from "../types/fieldTypes";
+import { FormField } from "../types/fieldTypes";
 
 const changeFormFieldType = (
-  oldField: formField,
-  newType: fieldTypes
-): formField => {
+  oldField: FormField,
+  newType: "TEXT" | "DROPDOWN" | "RADIO"
+): FormField => {
   let carryOptions: string[] = [];
   switch (oldField.kind) {
-    case fieldTypes.dropdown:
-    case fieldTypes.radio:
-    case fieldTypes.multiSelect:
+    case "DROPDOWN":
+    case "RADIO":
       carryOptions = [...oldField.options];
-      break;
-
-    default:
       break;
   }
 
   switch (newType) {
-    case fieldTypes.text:
+    case "TEXT":
       return {
-        kind: fieldTypes.text,
         id: oldField.id,
+        kind: "TEXT",
         label: oldField.label,
-        fieldType: textFieldTypes.text,
+        // fieldType: textFieldTypes.text,
         value: "",
       };
 
-    case fieldTypes.dropdown:
+    case "DROPDOWN":
       return {
-        kind: fieldTypes.dropdown,
+        kind: "DROPDOWN",
         id: oldField.id,
         label: oldField.label,
         options: carryOptions,
         value: "",
       };
 
-    case fieldTypes.radio:
+    case "RADIO":
       return {
-        kind: fieldTypes.radio,
+        kind: "RADIO",
         id: oldField.id,
         label: oldField.label,
         options: carryOptions,
         value: "",
-      };
-
-    case fieldTypes.textarea:
-      return {
-        kind: fieldTypes.textarea,
-        id: oldField.id,
-        label: oldField.label,
-        value: "",
-      };
-
-    case fieldTypes.multiSelect:
-      return {
-        kind: fieldTypes.multiSelect,
-        id: oldField.id,
-        label: oldField.label,
-        options: carryOptions,
-        values: [],
       };
   }
 };
 
 export default function EditField(props: {
-  field: formField;
-  updateFieldCB: (field: formField) => void;
+  field: FormField;
+  updateFieldCB: (field: FormField) => void;
   removeFieldCB: (id: number) => void;
 }) {
   return (
@@ -84,14 +63,15 @@ export default function EditField(props: {
           value={props.field.kind}
           className="m-4 p-2"
           onChange={(e) => {
-            let selectedType =
-              fieldTypes[e.target.value as keyof typeof fieldTypes];
-
+            const selectedType = e.target.value as
+              | "TEXT"
+              | "DROPDOWN"
+              | "RADIO";
             if (selectedType === props.field.kind) return;
             props.updateFieldCB(changeFormFieldType(props.field, selectedType));
           }}
         >
-          {Object.keys(fieldTypes).map((type, index) => (
+          {["TEXT", "DROPDOWN", "RADIO"].map((type, index) => (
             <option key={index} value={type}>
               {type}
             </option>
@@ -100,7 +80,7 @@ export default function EditField(props: {
         <button
           className="text-white bg-gradient-to-br from-pink-500 to-orange-400 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-pink-200 dark:focus:ring-pink-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center m-2"
           onClick={() => {
-            props.removeFieldCB(props.field.id);
+            props.removeFieldCB(props.field.id!);
           }}
         >
           Remove
@@ -112,38 +92,37 @@ export default function EditField(props: {
 }
 
 function FieldOptions(props: {
-  field: formField;
-  updateFieldCB: (field: formField) => void;
+  field: FormField;
+  updateFieldCB: (field: FormField) => void;
 }) {
   const field = props.field;
   const [newOptionLabel, setNewOptionLabel] = useState("");
 
   switch (field.kind) {
-    case fieldTypes.text:
-      return (
-        <div className="flex items-center">
-          <p>Teext field type: </p>
-          <select
-            value={field.fieldType}
-            className="m-4 p-2"
-            onChange={(e) => {
-              let selectedType =
-                textFieldTypes[e.target.value as keyof typeof textFieldTypes];
-              if (selectedType === field.fieldType) return;
-              props.updateFieldCB({ ...field, fieldType: selectedType });
-            }}
-          >
-            {Object.keys(textFieldTypes).map((type, index) => (
-              <option key={index} value={type}>
-                {type}
-              </option>
-            ))}
-          </select>
-        </div>
-      );
-    case fieldTypes.dropdown:
-    case fieldTypes.radio:
-    case fieldTypes.multiSelect:
+    // case "TEXT":
+    //   return (
+    //     <div className="flex items-center">
+    //       <p>Teext field type: </p>
+    //       <select
+    //         value={field.fieldType}
+    //         className="m-4 p-2"
+    //         onChange={(e) => {
+    //           let selectedType =
+    //             textFieldTypes[e.target.value as keyof typeof textFieldTypes];
+    //           if (selectedType === field.fieldType) return;
+    //           props.updateFieldCB({ ...field, fieldType: selectedType });
+    //         }}
+    //       >
+    //         {Object.keys(textFieldTypes).map((type, index) => (
+    //           <option key={index} value={type}>
+    //             {type}
+    //           </option>
+    //         ))}
+    //       </select>
+    //     </div>
+    //   );
+    case "DROPDOWN":
+    case "RADIO":
       return (
         <div>
           <p>Options: </p>

@@ -1,42 +1,23 @@
 import { Link, useQueryParams } from "raviger";
 import React, { useEffect, useState } from "react";
-import { fieldTypes, formField, textFieldTypes } from "../types/fieldTypes";
-import { formData } from "../types/formTypes";
-import { getLocalForms, saveLocalForms } from "../utils/storageUtils";
+import { Form } from "../types/formTypes";
+import { deleteForm, listForms } from "../utils/apiUtils";
+import { getLocalForms } from "../utils/storageUtils";
+import Modal from "./common/Modal";
+import CreateForm from "./CreateForm";
 
-const initialFormFields: formField[] = [
-  {
-    kind: fieldTypes.text,
-    id: 0,
-    label: "First Name",
-    fieldType: textFieldTypes.text,
-    value: "",
-  },
-  {
-    kind: fieldTypes.text,
-    id: 1,
-    label: "Last Name",
-    fieldType: textFieldTypes.text,
-    value: "",
-  },
-  {
-    kind: fieldTypes.text,
-    id: 2,
-    label: "Email",
-    fieldType: textFieldTypes.email,
-    value: "",
-  },
-  {
-    kind: fieldTypes.text,
-    id: 3,
-    label: "Date of Birth",
-    fieldType: textFieldTypes.date,
-    value: "",
-  },
-];
+const fetchForms = async (setFormsCB: (value: Form[]) => void) => {
+  try {
+    const data = await listForms({ offset: 0, limit: 10 });
+    setFormsCB(data);
+  } catch (error) {
+    console.log(error);
+  }
+};
 
-export function FormsList() {
-  const [forms, setForms] = useState(getLocalForms());
+export default function FormsList() {
+  const [forms, setForms] = useState<Form[]>(getLocalForms());
+  const [newForm, setNewForm] = useState<boolean>(false);
 
   const [{ search }, setQuery] = useQueryParams();
   const [searchString, setSearchString] = useState("");
@@ -49,33 +30,18 @@ export function FormsList() {
   });
 
   useEffect(() => {
-    let timeoutId = setTimeout(() => {
-      saveLocalForms(forms);
-    }, 1000);
-    return () => {
-      clearTimeout(timeoutId);
-    };
-  }, [forms]);
+    fetchForms(setForms);
+  }, []);
 
-  const addNewForm = () => {
-    setForms([
-      {
-        id: Number(new Date()),
-        title: "Untitled Form",
-        formFields: initialFormFields,
-      },
-      ...forms,
-    ]);
-  };
-
-  const removeForm = (form: formData) => {
+  const removeForm = (form: Form) => {
     setForms(forms.filter((f) => form !== f));
+    deleteForm(form.id!);
   };
 
   return (
     <div className="flex flex-col gap-4 p-4 divide-y divide-dotted">
       <p className="text-xl">Forms</p>
-      <label>Search</label>
+      <label htmlFor="searchBar">Search</label>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -83,6 +49,7 @@ export function FormsList() {
         }}
       >
         <input
+          id="searchBar"
           type="text"
           name="search"
           value={searchString}
@@ -92,23 +59,21 @@ export function FormsList() {
           }}
         />
       </form>
-      <div>
+      <ul>
         {forms
           .filter((form) =>
             form.title.toLowerCase().includes(searchString.toLowerCase())
           )
           .map((form, index) => (
-            <FormTile
-              key={index}
-              form={form}
-              removeFormCB={() => removeForm(form)}
-            />
+            <li key={index}>
+              <FormTile form={form} removeFormCB={() => removeForm(form)} />
+            </li>
           ))}
-      </div>
+      </ul>
       <div className="flex gap-4">
         <button
           className="text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center m-2"
-          onClick={addNewForm}
+          onClick={(_) => setNewForm(true)}
         >
           New Form
         </button>
@@ -119,23 +84,26 @@ export function FormsList() {
           Close
         </Link>
       </div>
+      <Modal open={newForm} closeCB={() => setNewForm(false)}>
+        <CreateForm />
+      </Modal>
     </div>
   );
 }
 
-function FormTile(props: { form: formData; removeFormCB: () => void }) {
+function FormTile(props: { form: Form; removeFormCB: () => void }) {
   return (
     <div className="flex">
       <p className="p-4 flex-1">{props.form.title}</p>
       <Link
         className="text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center m-2"
-        href={`preview/${props.form.id}`}
+        href={`/preview/${props.form.id}`}
       >
         Preview
       </Link>
       <Link
         className="text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center m-2"
-        href={`forms/${props.form.id}`}
+        href={`/forms/${props.form.id}`}
       >
         Edit
       </Link>
