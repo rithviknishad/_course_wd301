@@ -1,4 +1,4 @@
 [[redirects]]
   from = "/*"
-  to = "/my-app/index.html"
+  to = "/index.html"
   status = 200
