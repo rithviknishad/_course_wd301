@@ -22,6 +22,8 @@ export default function FormsList() {
   const [{ search }, setQuery] = useQueryParams();
   const [searchString, setSearchString] = useState("");
 
+  console.log(search);
+
   useEffect(() => {
     document.title = "Form Editor";
     return () => {
